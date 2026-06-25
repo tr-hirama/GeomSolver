@@ -1,0 +1,19 @@
+# .NET build output
+bin/
+obj/
+[Dd]ebug/
+[Rr]elease/
+*.user
+*.suo
+
+# VS / Rider
+.vs/
+.idea/
+*.csproj.user
+
+# OS
+Thumbs.db
+.DS_Store
+
+# local
+.git-commit-msg.txt
