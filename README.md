@@ -43,18 +43,38 @@ var pinned = PolylineFromLengths.Solve(approx, lengths, closed: true,
 
 `Result` は補正後頂点 `Points`、辺ごとの誤差 `EdgeError`、最大誤差／閉合差 `MaxError`、収束フラグ `Converged`、自己交差 `SelfIntersects` / `Crossings` を返す。
 
+## 直角版 `OrthogonalFromLengths`
+
+全頂点を**厳密に 90°**（直交多角形／折れ線）にし、各辺長も**厳密**に保つ別ソルバ。基準角 θ は任意（概略点から推定、または基準辺の方向で指定）。
+
+全角 90° ＋ 全辺長厳密なら図形は「基準角 θ ＋ 開始点 ＋ 各頂点の曲がり向き(±90°)」で一意に決まるため、**反復不要**。曲がり向きは概略点から、θ は概略点への 2D プロクラステス（閉形式）で求める。
+
+> 直交「閉合」多角形は辺数が偶数で θ方向／θ+90°方向の辺の和がそれぞれ 0 でないと閉じない。「全辺長厳密」＋「全角90°」＋「閉合」は一般に同時に満たせないため、本ソルバは**閉合を強制せず**、`closed: true` のときは閉合差 `ClosureGap` を返す（開チェーンとして配置）。
+
+```csharp
+// 概略4点 + 4辺長 → 全角90°・辺長厳密(θは推定)。Points は P0..Pn(末尾=戻り点)、ClosureGap で閉合差
+var r = OrthogonalFromLengths.Solve(approx, lengths, closed: true);
+
+// 基準辺を指定: edge0 を水平(θ=0)に固定
+var r2 = OrthogonalFromLengths.Solve(approx, lengths, closed: true, baseAngleRad: 0.0, alignEdgeIndex: 0);
+```
+
+`Result`: 頂点 `Points`（open は n 点、closed は n+1 点で末尾が始点への戻り点）、基準角 `BaseAngleRad`、閉合差 `ClosureGap`、概略点へのRMS残差 `FitResidual`、各頂点の曲がり向き `TurnSigns`、直角判定が曖昧だったか `HasAmbiguousCorner`。
+
 ## ビルド・テスト
 
 ```
 dotnet run --project GeomSolver.Tests
 ```
 
-依存ゼロの簡易テストランナー（三角形 SSS、四角形、長方形不動、開放折れ線、頂点固定、自己交差検出、成立しない辺長 など 15 件）。NuGet 復元不要・オフライン可。
+依存ゼロの簡易テストランナー（辺長版＋直角版あわせて 30 件：三角形 SSS、四角形、長方形不動、開放折れ線、頂点固定、自己交差検出、成立しない辺長、直角化の回転復元・基準辺指定・厳密辺長 など）。NuGet 復元不要・オフライン可。
 
 ## 構成
 
 ```
 GeomSolver/
-├─ GeomSolver/            … クラスライブラリ（PolylineFromLengths.cs）
-└─ GeomSolver.Tests/      … 依存ゼロのテストランナー
+├─ GeomSolver/
+│   ├─ PolylineFromLengths.cs     … 辺長拘束ソルバ + 自己交差検査
+│   └─ OrthogonalFromLengths.cs   … 全頂点90°・辺長厳密ソルバ
+└─ GeomSolver.Tests/              … 依存ゼロのテストランナー（30件）
 ```
